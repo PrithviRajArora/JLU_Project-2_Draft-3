@@ -97,6 +97,164 @@ A full-stack academic marks management portal for Jaypee Lakeview University (JL
 
 ---
 
+## Database & Schema
+
+> The schema is defined entirely in [`jlu_marks/core/models.py`](jlu_marks/core/models.py) and applied automatically by Django migrations — there is no hand-written SQL to run manually.
+>
+> - **Full SQL DDL** → [`docs/schema.sql`](docs/schema.sql)
+> - **Full ER diagram** → [`docs/er_diagram.md`](docs/er_diagram.md)
+
+### Entity Relationship Diagram
+
+```mermaid
+erDiagram
+
+    USER {
+        serial      id          PK
+        varchar     jlu_id      UK
+        varchar     first_name
+        varchar     last_name
+        varchar     email       UK
+        varchar     role
+        boolean     is_active
+        timestamptz created_at
+    }
+    FACULTY_OF {
+        serial      id         PK
+        varchar     name       UK
+        varchar     short_name
+    }
+    SCHOOL {
+        serial      id            PK
+        int         faculty_of_id FK
+        varchar     name          UK
+    }
+    PROGRAM {
+        serial      id           PK
+        int         school_id    FK
+        varchar     name
+        varchar     short_name
+        smallint    duration_yrs
+    }
+    FACULTY {
+        varchar     faculty_id PK
+        int         user_id    FK
+        varchar     name
+        int         school_id  FK
+        varchar     department
+    }
+    STUDENT {
+        varchar     student_id    PK
+        int         user_id       FK
+        varchar     roll_no       UK
+        varchar     gender
+        int         program_id    FK
+        smallint    semester
+        varchar     academic_year
+    }
+    CCR {
+        varchar     course_code    PK
+        varchar     course_name
+        varchar     course_type
+        varchar     faculty_id     FK
+        int         program_id     FK
+        smallint    semester
+        smallint    credits
+        smallint    int_weightage
+        smallint    ese_weightage
+        varchar     ese_mode
+        boolean     is_submitted
+    }
+    STUDENT_ENROLMENT {
+        serial      id            PK
+        varchar     student_id    FK
+        varchar     course_code   FK
+        varchar     academic_year
+    }
+    IA_COMPONENT {
+        serial      id          PK
+        varchar     course_code FK
+        varchar     name
+        numeric     weightage
+        numeric     max_marks
+        varchar     mode
+    }
+    MARKS_ENTRY {
+        serial      id             PK
+        varchar     student_id     FK
+        int         component_id   FK
+        numeric     marks_obtained
+        numeric     scaled_marks
+        varchar     entered_by     FK
+    }
+    RESULT_SHEET {
+        serial      id          PK
+        varchar     student_id  FK
+        varchar     course_code FK
+        numeric     int_total
+        numeric     ese_marks
+        numeric     grand_total
+        varchar     pass_status
+    }
+    EXAM_ATTEMPT {
+        serial      id            PK
+        varchar     student_id    FK
+        varchar     course_code   FK
+        varchar     attempt_type
+        smallint    attempt_no
+        varchar     academic_year
+        numeric     ese_marks
+        varchar     status
+        varchar     entered_by    FK
+    }
+    STUDENT_BACKLOG {
+        serial      id                  PK
+        varchar     student_id          FK
+        varchar     course_code         FK
+        varchar     reason
+        int         origin_attempt_id   FK
+        int         clearing_attempt_id FK
+        varchar     status
+    }
+    COURSE_EXAM_STATS {
+        serial      id               PK
+        varchar     course_code      FK
+        varchar     academic_year
+        varchar     attempt_type
+        int         total_registered
+        int         total_pass
+        int         total_fail
+        numeric     pass_rate
+        numeric     avg_marks
+    }
+
+    FACULTY_OF      ||--o{ SCHOOL            : "has"
+    SCHOOL          ||--o{ PROGRAM           : "offers"
+    SCHOOL          ||--o{ FACULTY           : "employs"
+    USER            ||--|| FACULTY           : "is a"
+    USER            ||--|| STUDENT           : "is a"
+    PROGRAM         ||--o{ STUDENT           : "has"
+    FACULTY         ||--o{ CCR               : "teaches"
+    PROGRAM         ||--o{ CCR               : "offers"
+    STUDENT         ||--o{ STUDENT_ENROLMENT : "enrolled in"
+    CCR             ||--o{ STUDENT_ENROLMENT : "has"
+    CCR             ||--o{ IA_COMPONENT      : "defines"
+    STUDENT         ||--o{ MARKS_ENTRY       : "receives"
+    IA_COMPONENT    ||--o{ MARKS_ENTRY       : "assessed by"
+    FACULTY         ||--o{ MARKS_ENTRY       : "enters"
+    STUDENT         ||--o{ RESULT_SHEET      : "has"
+    CCR             ||--o{ RESULT_SHEET      : "generates"
+    STUDENT         ||--o{ EXAM_ATTEMPT      : "makes"
+    CCR             ||--o{ EXAM_ATTEMPT      : "for"
+    FACULTY         ||--o{ EXAM_ATTEMPT      : "records"
+    STUDENT         ||--o{ STUDENT_BACKLOG   : "has"
+    CCR             ||--o{ STUDENT_BACKLOG   : "from"
+    EXAM_ATTEMPT    ||--o{ STUDENT_BACKLOG   : "creates/clears"
+    CCR             ||--o{ COURSE_EXAM_STATS : "summarised by"
+```
+
+---
+
 ## Project Structure
 
 ```
